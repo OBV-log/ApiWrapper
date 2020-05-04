@@ -3,13 +3,13 @@
  * Generic wrapper to call the API at https://railsysteem.eu/api
  */
 class ObvApiWrapper {
-    
+
     private $baseUrl;
     private $apiVersion = '1.0.0';
     private $apiKey;
     private $apiSecret;
     private $apiTimestamp;
-    private $debug = false;
+    private $debug = true;
 
     public function __construct ($apiKey = null, $apiSecret = null, $debug = false)
     {
@@ -17,7 +17,7 @@ class ObvApiWrapper {
         $this->apiSecret    = $apiSecret;
         $this->apiTimestamp = time();
         $this->debug        = $debug;
-        $this->baseUrl      = 'http://obv-start/api/';
+        $this->baseUrl      = 'https://railsysteem.eu/api/';
 
         if($this->debug)
         {
@@ -49,7 +49,7 @@ class ObvApiWrapper {
         return $this->call('get', $uri, $signature, $apikey);
 
     }
-        
+
     /**
      * Invoke API
      * @param string $method API method to call
@@ -70,17 +70,17 @@ class ObvApiWrapper {
         if($this->debug) echo 'uri: ' , $uri, '<br/>';
 
         return $this->call('post', $uri, $signature, $apikey, $params);
-            
+
     }
-        
+
     /**
-     * 
-     * @param type $httpmethod 
+     *
+     * @param type $httpmethod
      * @param type $url
      * @param type $params
      * @param type $secret
      * @return type
-     * 
+     *
      * Create a hmac signature
      */
     private function signature($httpmethod, $url, $params, $secret)
@@ -88,24 +88,23 @@ class ObvApiWrapper {
         $signature_params = [
                 'apiversion'   => $this->apiVersion,
                 'apikey'       => $this->apiKey,
-                'apitimestamp' => $this->apiTimestamp,
             ];
-        
+
         if(is_array($params)) $signature_params = array_merge ($signature_params, $params);
         $params = array_change_key_case($signature_params, CASE_LOWER);
         ksort($params);
-            
+
         $params = urldecode(http_build_query($params));
         return hash_hmac ('sha512', implode("\n", [strtolower($httpmethod), $url, $params]), $secret);
     }
-    
+
     /**
-     * 
+     *
      * @param type $httpmethod
      * @param type $method
      * @param type $params
      * @return type
-     * 
+     *
      * return a uri to call
      */
     private function uri($httpmethod, $method, $params)
@@ -121,9 +120,9 @@ class ObvApiWrapper {
         }
         else return $this->baseUrl.$method;
     }
-    
+
     /**
-     * 
+     *
      * @param type $httpmethod
      * @param type $uri
      * @param type $signature
@@ -131,19 +130,19 @@ class ObvApiWrapper {
      * @param type $params
      * @return type
      * @throws \Exception
-     * 
+     *
      * Calls the API
      */
     private function call($httpmethod, $uri, $signature, $apikey, $params = null)
     {
-        if ($apikey == true) 
-                $header = array('apisignature: '.$signature, 
+        if ($apikey == true)
+                $header = array('apisignature: '.$signature,
                                 'apikey:'.$this->apiKey,
                                 'apiversion:'.$this->apiVersion,
                                 'apitimestamp:'. $this->apiTimestamp,
                                 );
-        
-        
+
+
         $ch = curl_init ($uri);
         if ($apikey == true) curl_setopt ($ch, CURLOPT_HTTPHEADER, $header );
         if($httpmethod === 'post')
@@ -164,8 +163,8 @@ class ObvApiWrapper {
 
         $result = curl_exec($ch);
 
-        
-        if (curl_errno($ch)) { 
+
+        if (curl_errno($ch)) {
                 throw new \Exception(curl_error($ch));
         }
 
