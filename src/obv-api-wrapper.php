@@ -11,6 +11,12 @@ class ObvApiWrapper {
     private $apiTimestamp;
     private $debug = true;
 
+    /**
+     * ObvApiWrapper constructor.
+     * @param null $apiKey
+     * @param null $apiSecret
+     * @param bool $debug
+     */
     public function __construct ($apiKey = null, $apiSecret = null, $debug = false)
     {
         $this->apiKey       = $apiKey;
@@ -34,7 +40,7 @@ class ObvApiWrapper {
      * @param bool $apiKey  use apikey or not
      * @return object
      */
-    public function get ($method, $params = null, $apikey = false)
+    public function get ($method, $params = null, $apikey = true)
     {
         if($this->debug) var_dump($params);
 
@@ -57,7 +63,7 @@ class ObvApiWrapper {
      * @param bool $apiKey use apikey or not
      * @return object
      */
-    public function post ($method, $params = null, $apikey = false)
+    public function post ($method, $params = null, $apikey = true)
     {
         if($this->debug) var_dump($params);
 
@@ -136,12 +142,11 @@ class ObvApiWrapper {
     private function call($httpmethod, $uri, $signature, $apikey, $params = null)
     {
         if ($apikey == true)
-                $header = array('apisignature: '.$signature,
-                                'apikey:'.$this->apiKey,
-                                'apiversion:'.$this->apiVersion,
-                                'apitimestamp:'. $this->apiTimestamp,
-                                );
-
+            $header = array('apisignature: '.$signature,
+                'apikey:'.$this->apiKey,
+                'apiversion:'.$this->apiVersion,
+                'apitimestamp:'. $this->apiTimestamp,
+            );
 
         $ch = curl_init ($uri);
         if ($apikey == true) curl_setopt ($ch, CURLOPT_HTTPHEADER, $header );
@@ -153,6 +158,7 @@ class ObvApiWrapper {
         curl_setopt ($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_HEADER , true); // get http headers, used for downloads
 
         if($this->debug)
         {
@@ -161,15 +167,40 @@ class ObvApiWrapper {
             curl_setopt($ch, CURLOPT_STDERR, $verbose);
         }
 
-        $result = curl_exec($ch);
+        $r = curl_exec($ch);
 
+        $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+
+        $result_array = explode("\n\r", $r , 2); //get first line with header
+        $result = $result_array[1];
+
+        //account for file downloads
+        if($contentType !=='application/json')
+        {
+            $header_array = explode("\n", $result_array[0]);
+            foreach($header_array as $header_value) {
+                $header_pieces = explode(':', $header_value);
+                if(count($header_pieces) == 2) {
+                    $headers[$header_pieces[0]] = trim($header_pieces[1]);
+                }
+            }
+
+            //force file download
+            header('Content-type: ' . $headers['Content-Type']);
+            header('Content-Disposition: ' . $headers['Content-Disposition']);
+            header("Cache-Control: public");
+            header('Content-Description: File Transfer');
+            echo $result;
+            exit();
+        }
 
         if (curl_errno($ch)) {
-                throw new \Exception(curl_error($ch));
+            throw new \Exception(curl_error($ch));
         }
 
         $answer = json_decode($result);
 
+        curl_close($ch);
         if($this->debug)
         {
             var_dump($result);

@@ -13,10 +13,10 @@ include 'src/obv-api-wrapper.php';
 $wrapper = new ObvApiWrapper('yourkey', 'yoursecret');
 
 //call a get method without any parameters
-$result = $wrapper->get('anygetmethod', null, true);
+$result = $wrapper->get('anygetmethod');
 
 //call a get method with parameters
-$result = $wrapper->get('anygetmethod', ['param1'=>'value1','param2'=>'value2'], true);
+$result = $wrapper->get('anygetmethod', ['param1'=>'value1','param2'=>'value2']);
 
 if ( isset($result->response) )
     echo $result->response, '<br/>';
@@ -24,11 +24,11 @@ if ( isset($result->response) )
 ```
 
 
-##Debug usage
+## Debug usage
 ```php
 // load the wrapper with your key and secret, set debug to true
 $wrapper = new ObvApiWrapper('yourkey', 'yoursecret', true);
 
 //call a get method without any parameters
-$result = $wrapper->get('anygetmethod', null, true);
+$result = $wrapper->get('anygetmethod');
 ```
